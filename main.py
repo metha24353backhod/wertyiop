@@ -41,5 +41,5 @@ with tab1:
     # Pages 2 to n-1 → /content/images
       out = f"{folder_images}/page{i}.png"
       page.save(out, "PNG")
-      st.write(len("images"))
+      st.write(os.listdir(folder_images)
 
