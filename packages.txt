@@ -1,3 +1,40 @@
-language-pack-* 
-fonts-noto*
+# Installs locale data for all languages, replacing 'language-pack-*'
+locales-all
+
+# Comprehensive Noto font coverage to prevent "tofu" (missing characters)
+# Installs core Noto fonts
+fonts-noto-core
+
+# Installs CJK (Chinese, Japanese, Korean) fonts
+fonts-noto-cjk
+
+# Installs color emoji fonts
+fonts-noto-color-emoji
+
+# Installs extra Noto fonts for a broad range of non-Latin scripts
+fonts-noto-extra
+
+# Example of other specific font packages for various scripts
+fonts-noto-cyrillic
+fonts-noto-indic
+fonts-noto-tibetan
+fonts-noto-thai
+fonts-noto-arabic
+fonts-noto-devanagari
+fonts-noto-gurmukhi
+fonts-noto-gujarati
+fonts-noto-bengali
+fonts-noto-tamil
+fonts-noto-telugu
+fonts-noto-kannada
+fonts-noto-malayalam
+fonts-noto-oriya
+fonts-noto-khmer
+fonts-noto-ethiopic
+fonts-noto-hebrew
+fonts-noto-georgian
+fonts-noto-myanmar
+fonts-noto-lao
+
+# Common utility package, often required for PDF processing
 poppler-utils
