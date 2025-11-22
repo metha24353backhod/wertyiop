@@ -11,6 +11,7 @@ with tab1:
     import os
 
     pdf_path = file_upload
+    pdf_bytes = file_upload.getvalue()
 
     folder_page1 = "page1"
     folder_images = "images"
@@ -18,7 +19,7 @@ with tab1:
     os.makedirs(folder_page1, exist_ok=True)
     os.makedirs(folder_images, exist_ok=True)
 
-    pages = convert_from_path(pdf_path, dpi=300)
+    pages = convert_from_path(pdf_bytes, dpi=300)
     total = len(pages)
 
     st.write(total)
