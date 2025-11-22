@@ -7,7 +7,7 @@ name=st.text_input("enter csv name")
 tab1, tab2,tab3 = st.tabs(["Dashboard", "Analysis", "Raw Data"])
 with tab1:
   if file_upload:
-    from pdf2image import convert_from_path
+    from pdf2image import convert_from_path,convert_from_bytes
     import os
 
     pdf_path = file_upload
@@ -19,7 +19,7 @@ with tab1:
     os.makedirs(folder_page1, exist_ok=True)
     os.makedirs(folder_images, exist_ok=True)
 
-    pages = convert_from_path(pdf_bytes, dpi=300)
+    pages =  convert_from_bytes(pdf_bytes, dpi=300)
     total = len(pages)
 
     st.write(total)
