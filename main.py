@@ -1,3 +1,3 @@
 import streamlit as st 
-st.file_uploader()
+uploaded_file = st.file_uploader("Choose a pdf file")
 key = st.text_input("enter key")
