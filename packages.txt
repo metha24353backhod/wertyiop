@@ -1,1 +1,5 @@
 poppler-utils
+locales-all
+fonts-noto-cjk
+fonts-noto-color-emoji
+fonts-noto-extra
