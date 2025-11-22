@@ -1,0 +1,3 @@
+language-pack-* 
+fonts-noto*
+poppler-utils
