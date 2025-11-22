@@ -3,17 +3,20 @@ from pdf2image import convert_from_bytes
 from PIL import Image
 import io
 import zipfile
+import os
 
-# App title and input fields
+# App title
 st.title("PDF to Images (in ZIP file)")
-file_upload = st.file_uploader("Choose a pdf file", type="pdf")
-key = st.text_input("Enter key (not used in this version)")
-name = st.text_input("Enter csv name (not used in this version)")
 
 # Tabs for app organization
 tab1, tab2, tab3 = st.tabs(["Dashboard", "Analysis", "Raw Data"])
 
 with tab1:
+    st.header("Upload and Process PDF")
+    
+    # File uploader is now inside tab1
+    file_upload = st.file_uploader("Choose a pdf file", type="pdf")
+
     if file_upload:
         st.info("Converting PDF to images...")
         try:
@@ -63,3 +66,11 @@ with tab1:
         except Exception as e:
             st.error(f"An error occurred: {e}")
             st.error("Make sure you have `poppler-utils` installed in your deployment environment via `packages.txt`.")
+
+with tab2:
+    st.header("Analysis (Placeholder)")
+    st.info("The logic for analysis will go here.")
+
+with tab3:
+    st.header("Raw Data (Placeholder)")
+    st.info("Displaying raw data will go here.")
