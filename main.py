@@ -90,6 +90,7 @@ def convert_files_tab():
             
             zip_buffer = io.BytesIO()
             with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED, False) as zip_file:
+                # The following logic is for creating the downloadable ZIP file and skips the last page as per original code.
                 for i, page in enumerate(pages, start=1):
                     if i == total: # Skip last page
                         continue
@@ -110,7 +111,11 @@ def convert_files_tab():
                 file_name="super_img.zip",
                 mime="application/zip"
             )
-            
+            # Add cache clear for large memory objects in this tab as well
+            if st.session_state.processed_images:
+                st.session_state.processed_images = []
+                st.info("Cleared image data from memory after ZIP preparation.")
+
         except Exception as e:
             st.error(f"An error occurred: {e}")
             st.error("Ensure 'poppler-utils' is installed via packages.txt.")
@@ -136,6 +141,7 @@ def process_files_tab():
             with zipfile.ZipFile(zip_file_upload, "r") as zip_ref:
                 for file_info in zip_ref.infolist():
                     file_name = file_info.filename
+                    # Filter out the first page as per original code logic, and ensure it's a PNG
                     if file_name.endswith(".png") and not file_name.startswith("super_img/image1.png"):
                         with zip_ref.open(file_name) as file:
                             image_bytes = file.read()
@@ -146,9 +152,10 @@ def process_files_tab():
             return
     # Or, get images from session state if processed in Tab 1
     elif st.session_state.processed_images:
+        # Skip the first page of the list (index 0) as per original code logic
         images_to_process = [img for i, img in enumerate(st.session_state.processed_images) if i > 0]
         
-    st.write(f"Found {len(images_to_process)} images to process.")
+    st.write(f"Found **{len(images_to_process)}** images to process.")
 
     if st.button("Process Images"):
         if not api_key_input:
@@ -161,6 +168,9 @@ def process_files_tab():
         st.session_state.api_key = api_key_input
         st.session_state.csv_name = csv_name_input
         
+        # Clear previous outputs before starting a new run
+        st.session_state.gemini_csv_outputs = [] 
+        
         genai.configure(api_key=st.session_state.api_key)
         model = genai.GenerativeModel("gemini-2.5-flash")
         
@@ -168,6 +178,7 @@ def process_files_tab():
             try:
                 temp_csv_buffers = []
                 for i, page in enumerate(images_to_process, start=1):
+                    # For page numbers visible to the user, this corresponds to the PDF page number i+1 (since the first page was skipped).
                     response = model.generate_content([prompt_text, page])
                     csv_text = response.text.strip()
                     temp_csv_buffers.append(io.StringIO(csv_text))
@@ -188,32 +199,59 @@ def process_files_tab():
 
                     for i, csv_buffer in enumerate(st.session_state.gemini_csv_outputs):
                         csv_buffer.seek(0)
-                        df = pd.read_csv(csv_buffer, encoding='utf-8', quoting=csv.QUOTE_ALL)
+                        # pd.read_csv needs quoting=csv.QUOTE_NONE or similar when fields are already quoted in the data
+                        # However, since the prompt specifies ALL fields must be quoted, the default parser usually handles this,
+                        # but we explicitly set quoting to 3 (QUOTE_NONE) to prevent misinterpretation of the quotes as part of the data.
+                        # We also explicitly specify the separator as a comma.
                         
+                        try:
+                             # Try reading with standard quoting first (0 for QUOTE_MINIMAL, which is default)
+                            df = pd.read_csv(csv_buffer, encoding='utf-8', sep=',', quoting=csv.QUOTE_MINIMAL)
+                        except pd.errors.ParserError:
+                            # Fallback to QUOTE_NONE if the first attempt fails due to over-quoting or parsing issues
+                            csv_buffer.seek(0)
+                            df = pd.read_csv(csv_buffer, encoding='utf-8', sep=',', quoting=csv.QUOTE_NONE)
+
+
                         if df.shape[1] != expected_columns:
-                            st.warning(f"Skipping CSV from page {i+2} due to incorrect column count.")
+                            st.warning(f"Skipping CSV from processed image {i+1} due to incorrect column count ({df.shape[1]} instead of {expected_columns}).")
                             continue
                         
                         if merged_df is None:
                             merged_df = df.copy()
                         else:
+                            # Concatenate only data rows, ensuring column names match (they should if all have 8 columns)
                             df_data_only = df.copy()
                             df_data_only.columns = merged_df.columns
                             merged_df = pd.concat([merged_df, df_data_only], ignore_index=True)
 
                     if merged_df is not None:
-                        csv_buffer = merged_df.to_csv(index=False).encode('utf-8')
+                        # Convert final DataFrame to CSV buffer for download
+                        csv_buffer_final = merged_df.to_csv(index=False).encode('utf-8')
+                        
                         st.download_button(
                             label="Download Final CSV",
-                            data=csv_buffer,
+                            data=csv_buffer_final,
                             file_name=f"{st.session_state.csv_name}.csv",
-                            mime="text/csv"
+                            mime="text/csv",
+                            on_click=clear_processing_memory # Attach the clearing function to the download button
                         )
                     else:
                         st.error("No valid CSV data found to merge.")
 
                 except Exception as e:
                     st.error(f"Error merging CSVs: {e}")
+
+def clear_processing_memory():
+    """Clears large objects from Session State after successful download."""
+    if "processed_images" in st.session_state:
+        st.session_state.processed_images = [] # Clear the list of PIL Images
+    if "gemini_csv_outputs" in st.session_state:
+        st.session_state.gemini_csv_outputs = [] # Clear the list of StringIO buffers
+    st.info("✨ Successfully cleared processed images and CSV outputs from memory.")
+    # Optional: Force a rerun to update the UI immediately
+    # st.experimental_rerun() # Use if necessary, but can be disruptive
+
 
 def merge_two_major_files_tab():
     st.header("3. Merge Two Major Files")
@@ -246,3 +284,6 @@ with tab3:
 
 with tab4:
     chat_with_files_tab()
+
+
+    
